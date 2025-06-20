@@ -21,7 +21,46 @@ class PDF extends FPDF
 }
 
 $conn = new mysqli("localhost", "root", "", "dairy_sanklan");
-$result = $conn->query("SELECT * FROM milk_sanklan1 ORDER BY entryno DESC");
+
+$filter = $_GET['filter'] ?? 'all';
+$custom_date = $_GET['custom_date'] ?? '';
+
+$whereClauses = [];
+if ($filter !== 'all') {
+    switch ($filter) {
+        case 'this_morning':
+            $whereClauses[] = "sandate = CURDATE() AND morning = 'M'";
+            break;
+        case 'this_evening':
+            $whereClauses[] = "sandate = CURDATE() AND evening = 'E'";
+            break;
+        case 'today':
+            $whereClauses[] = "sandate = CURDATE()";
+            break;
+        case 'this_week':
+            $whereClauses[] = "YEARWEEK(sandate, 1) = YEARWEEK(CURDATE(), 1)";
+            break;
+        case 'this_month':
+            $whereClauses[] = "YEAR(sandate) = YEAR(CURDATE()) AND MONTH(sandate) = MONTH(CURDATE())";
+            break;
+        case 'this_year':
+            $whereClauses[] = "YEAR(sandate) = YEAR(CURDATE())";
+            break;
+        case 'custom':
+            if (!empty($custom_date)) {
+                $whereClauses[] = "sandate = '" . $conn->real_escape_string($custom_date) . "'";
+            }
+            break;
+    }
+}
+
+$whereSql = '';
+if (!empty($whereClauses)) {
+    $whereSql = 'WHERE ' . implode(' AND ', $whereClauses);
+}
+
+$query = "SELECT * FROM milk_sanklan1 $whereSql ORDER BY entryno DESC";
+$result = $conn->query($query);
 
 $rows = [];
 $totalLiter = 0;

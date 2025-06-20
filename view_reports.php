@@ -7,10 +7,47 @@ if (!isset($_SESSION['user'])) {
 
 $conn = new mysqli("localhost", "root", "", "dairy_sanklan");
 
-// Fetch all rows
-$rows = [];
-$result = $conn->query("SELECT * FROM milk_sanklan1 ORDER BY entryno DESC");
+$filter = $_GET['filter'] ?? 'all';
+$custom_date = $_GET['custom_date'] ?? '';
 
+$whereClauses = [];
+if ($filter !== 'all') {
+    switch ($filter) {
+        case 'this_morning':
+            $whereClauses[] = "sandate = CURDATE() AND morning = 'M'";
+            break;
+        case 'this_evening':
+            $whereClauses[] = "sandate = CURDATE() AND evening = 'E'";
+            break;
+        case 'today':
+            $whereClauses[] = "sandate = CURDATE()";
+            break;
+        case 'this_week':
+            $whereClauses[] = "YEARWEEK(sandate, 1) = YEARWEEK(CURDATE(), 1)";
+            break;
+        case 'this_month':
+            $whereClauses[] = "YEAR(sandate) = YEAR(CURDATE()) AND MONTH(sandate) = MONTH(CURDATE())";
+            break;
+        case 'this_year':
+            $whereClauses[] = "YEAR(sandate) = YEAR(CURDATE())";
+            break;
+        case 'custom':
+            if (!empty($custom_date)) {
+                $whereClauses[] = "sandate = '" . $conn->real_escape_string($custom_date) . "'";
+            }
+            break;
+    }
+}
+
+$whereSql = '';
+if (!empty($whereClauses)) {
+    $whereSql = 'WHERE ' . implode(' AND ', $whereClauses);
+}
+
+$query = "SELECT * FROM milk_sanklan1 $whereSql ORDER BY entryno DESC";
+$result = $conn->query($query);
+
+$rows = [];
 $showMorning = false;
 $showEvening = false;
 $showCow = false;
@@ -100,13 +137,41 @@ $avgSnf = $snfCount > 0 ? round($totalSnf / $snfCount, 2) : 0;
 <body>
     <h2>Milk Entry Report</h2>
 
-    <div class="export-btn">
-        <a href="export_excel.php" target="_blank">
-            <button>⬇ Download Excel</button>
-        </a>
-        <a href="export_pdf.php" target="_blank" style="text-decoration: none; margin-left: 10px;">
-            <button style="background-color: #c0392b;">⬇ Download PDF</button>
-        </a>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <form method="GET" action="view_reports.php" id="filterForm" style="margin: 0; display: flex; align-items: center;">
+            <label for="filter" style="font-weight: bold; color: #2c3e50; margin-right: 10px;">Filter:</label>
+            <select name="filter" id="filter" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="all" <?= $filter === 'all' ? 'selected' : '' ?>>All</option>
+                <option value="this_morning" <?= $filter === 'this_morning' ? 'selected' : '' ?>>This Morning</option>
+                <option value="this_evening" <?= $filter === 'this_evening' ? 'selected' : '' ?>>This Evening</option>
+                <option value="today" <?= $filter === 'today' ? 'selected' : '' ?>>Today</option>
+                <option value="this_week" <?= $filter === 'this_week' ? 'selected' : '' ?>>This Week</option>
+                <option value="this_month" <?= $filter === 'this_month' ? 'selected' : '' ?>>This Month</option>
+                <option value="this_year" <?= $filter === 'this_year' ? 'selected' : '' ?>>This Year</option>
+                <option value="custom" <?= $filter === 'custom' ? 'selected' : '' ?>>Custom</option>
+            </select>
+            <div id="custom-date-container" style="margin-left: 10px; display: <?= $filter === 'custom' ? 'block' : 'none' ?>;">
+                <input type="date" name="custom_date" id="custom_date" value="<?= htmlspecialchars($custom_date) ?>" style="padding: 7px; border-radius: 4px; border: 1px solid #ccc;">
+                <button type="submit" style="padding: 8px 12px; border-radius: 4px; border: none; background-color: #3498db; color: white; cursor: pointer;">Go</button>
+            </div>
+        </form>
+        <div class="export-btn">
+            <?php
+            $export_params = '';
+            if ($filter !== 'all') {
+                $export_params = '?filter=' . urlencode($filter);
+                if ($filter === 'custom' && !empty($custom_date)) {
+                    $export_params .= '&custom_date=' . urlencode($custom_date);
+                }
+            }
+            ?>
+            <a href="export_excel.php<?= $export_params ?>" target="_blank">
+                <button>⬇ Download Excel</button>
+            </a>
+            <a href="export_pdf.php<?= $export_params ?>" target="_blank" style="text-decoration: none; margin-left: 10px;">
+                <button style="background-color: #c0392b;">⬇ Download PDF</button>
+            </a>
+        </div>
     </div>
 
     <table>
@@ -152,5 +217,17 @@ $avgSnf = $snfCount > 0 ? round($totalSnf / $snfCount, 2) : 0;
             </tr>
         </tfoot>
     </table>
+
+    <script>
+        document.getElementById('filter').addEventListener('change', function() {
+            var customDateContainer = document.getElementById('custom-date-container');
+            if (this.value === 'custom') {
+                customDateContainer.style.display = 'block';
+            } else {
+                customDateContainer.style.display = 'none';
+                document.getElementById('filterForm').submit();
+            }
+        });
+    </script>
 </body>
 </html>
