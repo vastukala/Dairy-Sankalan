@@ -138,23 +138,28 @@ $avgSnf = $snfCount > 0 ? round($totalSnf / $snfCount, 2) : 0;
     <h2>Milk Entry Report</h2>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <form method="GET" action="view_reports.php" id="filterForm" style="margin: 0; display: flex; align-items: center;">
-            <label for="filter" style="font-weight: bold; color: #2c3e50; margin-right: 10px;">Filter:</label>
-            <select name="filter" id="filter" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-                <option value="all" <?= $filter === 'all' ? 'selected' : '' ?>>All</option>
-                <option value="this_morning" <?= $filter === 'this_morning' ? 'selected' : '' ?>>This Morning</option>
-                <option value="this_evening" <?= $filter === 'this_evening' ? 'selected' : '' ?>>This Evening</option>
-                <option value="today" <?= $filter === 'today' ? 'selected' : '' ?>>Today</option>
-                <option value="this_week" <?= $filter === 'this_week' ? 'selected' : '' ?>>This Week</option>
-                <option value="this_month" <?= $filter === 'this_month' ? 'selected' : '' ?>>This Month</option>
-                <option value="this_year" <?= $filter === 'this_year' ? 'selected' : '' ?>>This Year</option>
-                <option value="custom" <?= $filter === 'custom' ? 'selected' : '' ?>>Custom</option>
-            </select>
-            <div id="custom-date-container" style="margin-left: 10px; display: <?= $filter === 'custom' ? 'block' : 'none' ?>;">
-                <input type="date" name="custom_date" id="custom_date" value="<?= htmlspecialchars($custom_date) ?>" style="padding: 7px; border-radius: 4px; border: 1px solid #ccc;">
-                <button type="submit" style="padding: 8px 12px; border-radius: 4px; border: none; background-color: #3498db; color: white; cursor: pointer;">Go</button>
-            </div>
-        </form>
+        <div style="display: flex; align-items: center;">
+            <a href="index.php" style="text-decoration: none; margin-right: 20px;">
+                <button style="padding: 8px 16px; background-color: #34495e; color: white; border: none; border-radius: 4px; cursor: pointer;">&#8592; Back</button>
+            </a>
+            <form method="GET" action="view_reports.php" id="filterForm" style="margin: 0; display: flex; align-items: center;">
+                <label for="filter" style="font-weight: bold; color: #2c3e50; margin-right: 10px;">Filter:</label>
+                <select name="filter" id="filter" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="all" <?= $filter === 'all' ? 'selected' : '' ?>>All</option>
+                    <option value="this_morning" <?= $filter === 'this_morning' ? 'selected' : '' ?>>This Morning</option>
+                    <option value="this_evening" <?= $filter === 'this_evening' ? 'selected' : '' ?>>This Evening</option>
+                    <option value="today" <?= $filter === 'today' ? 'selected' : '' ?>>Today</option>
+                    <option value="this_week" <?= $filter === 'this_week' ? 'selected' : '' ?>>This Week</option>
+                    <option value="this_month" <?= $filter === 'this_month' ? 'selected' : '' ?>>This Month</option>
+                    <option value="this_year" <?= $filter === 'this_year' ? 'selected' : '' ?>>This Year</option>
+                    <option value="custom" <?= $filter === 'custom' ? 'selected' : '' ?>>Custom</option>
+                </select>
+                <div id="custom-date-container" style="margin-left: 10px; display: <?= $filter === 'custom' ? 'block' : 'none' ?>;">
+                    <input type="date" name="custom_date" id="custom_date" value="<?= htmlspecialchars($custom_date) ?>" style="padding: 7px; border-radius: 4px; border: 1px solid #ccc;">
+                    <button type="submit" style="padding: 8px 12px; border-radius: 4px; border: none; background-color: #3498db; color: white; cursor: pointer;">Go</button>
+                </div>
+            </form>
+        </div>
         <div class="export-btn">
             <?php
             $export_params = '';

@@ -36,17 +36,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     $existing_entry = $check_stmt->get_result()->fetch_assoc();
 
     if ($existing_entry) {
-        // Update existing record
-        $stmt = $conn->prepare("UPDATE milk_sanklan1 SET cowliter = ?, bufliter = ?, fat = ?, snf = ? WHERE entryno = ?");
-        $stmt->bind_param("ddssi", $cowliter, $bufliter, $fat, $snf, $existing_entry['entryno']);
-        $success_message = "Record updated successfully.";
-    } else {
-        // Insert new record
-        $stmt = $conn->prepare("INSERT INTO milk_sanklan1 (sandate, accno, acname, morning, evening, cowliter, bufliter, fat, snf) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sisssddss", $date, $accno, $acname, $morning, $evening, $cowliter, $bufliter, $fat, $snf);
-        $success_message = "Record inserted successfully.";
-    }
-
+        // An entry already exists, show an error message
+        $sessionName = ($sessionFlag === 'M') ? 'Morning' : 'Evening';
+        $_SESSION['message'] = "<p class='error'>Entry for account number $accno already exists for the $sessionName session on this date.</p>";
+        header("Location: index.php");
+        exit;
+    } 
+    
+    // Insert new record
+    $stmt = $conn->prepare("INSERT INTO milk_sanklan1 (sandate, accno, acname, morning, evening, cowliter, bufliter, fat, snf) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sisssddss", $date, $accno, $acname, $morning, $evening, $cowliter, $bufliter, $fat, $snf);
+    $success_message = "Record inserted successfully.";
+    
     if ($stmt->execute()) {
         $_SESSION['message'] = "<p class='success'>$success_message</p>";
     } else {
@@ -138,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 <body>
 
     <div class="view-reports-button">
-        <a href="view_reports.php" target="_blank" style="text-decoration: none;">
+        <a href="view_reports.php" style="text-decoration: none;">
             <button>View Reports</button>
         </a>
     </div>
@@ -153,10 +154,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         ?>
         <form method="POST" autocomplete="off">
             <label for="accno">Account No:</label>
-            <input type="number" name="accno" id="accno" required>
+            <input type="number" name="accno" id="accno" required min="0">
 
             <label for="acname">Name:</label>
-            <input type="text" name="acname" id="acname" readonly required>
+            <input type="text" name="acname" id="acname" readonly required style="background-color: #e9ecef;">
 
             <label for="animal">Animal:</label>
             <input type="text" name="animal" id="animal" readonly style="background-color: #e9ecef;">
@@ -165,16 +166,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             <input type="text" id="session_display" value="<?= $sessionFlag === 'M' ? 'Morning' : 'Evening' ?>" readonly style="background-color: #e9ecef;">
 
             <label for="date">Date:</label>
-            <input type="date" name="date" value="<?= date('Y-m-d') ?>">
+            <input type="date" name="date" value="<?= date('Y-m-d') ?>" readonly style="background-color: #e9ecef;">
 
             <label for="liter">Liter:</label>
-			<input type="text" name="liter" required pattern="^\d+(\.\d{1,2})?$" title="Enter a valid number" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');">
+			<input type="number" name="liter" required min="0" step="0.01" title="Enter a valid number">
 
 			<label for="fat">Fat:</label>
-			<input type="text" name="fat" required pattern="^\d+(\.\d{1,2})?$" title="Enter a valid number" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');">
+			<input type="number" name="fat" required min="0" step="0.01" title="Enter a valid number">
 
 			<label for="snf">SNF:</label>
-			<input type="text" name="snf" required pattern="^\d+(\.\d{1,2})?$" title="Enter a valid number" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');">
+			<input type="number" name="snf" required min="0" step="0.01" title="Enter a valid number">
 
 
             <input type="submit" name="save" value="Save Entry">
@@ -182,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     </div>
 
     <script>
-        document.getElementById("accno").addEventListener("blur", function () {
+        document.getElementById("accno").addEventListener("input", function () {
             var accno = this.value;
             var acnameInput = document.getElementById("acname");
             var animalInput = document.getElementById("animal");
